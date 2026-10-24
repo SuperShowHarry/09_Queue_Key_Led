@@ -27,14 +27,27 @@
  #ifndef __BSP_KEY_H__
  #define __BSP_KEY_H__
 /****************************** Includes ******************************/
-#include <stdint.h>                   // 编译器提供的通用库包含部分
+#include <stdint.h>                   // the compiling lib
 #include <stdio.h>
-#include "main.h"
+
+#include "main.h"											//Core / OS layer
+#include "cmsis_os.h"
+
+#include "queue.h"										//specific file for operation
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_gpio.h"
 /****************************** Includes ******************************/
  
  //******************************* Defines ********************************//
+ //************* thread *************//
+extern osThreadId_t key_TaskHandle;
+extern const osThreadAttr_t key_Task_attributes;
+//************* thread *************//
+ 
+//************* queue *************//
+extern QueueHandle_t key_queue;
+//************* queue *************//
+ 
 /*  函数返回状态枚举                       */
 typedef enum
 {
@@ -56,6 +69,9 @@ typedef enum
 //******************************* Defines ********************************//
 //******************************* Declaring *******************************//
  key_status_t key_scan(key_press_status_t * key_value);
+
+
+void key_task_Func(void *argument);
 //******************************* Declaring *******************************//
  
  #endif

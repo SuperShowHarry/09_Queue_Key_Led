@@ -26,6 +26,15 @@
  ***************************************************************************/
  #include "bsp_key.h"
  
+ osThreadId_t key_TaskHandle;
+ QueueHandle_t key_queue;
+ 
+const osThreadAttr_t key_Task_attributes = {
+  .name = "key_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
+};
+ 
  key_status_t key_scan(key_press_status_t * key_value)
  {
 	 uint32_t counter = 0;
@@ -55,4 +64,52 @@
 		*key_value = key_status_value;
 		return KEY_ERRORTIMEOUT;	//始终没有按键按下返回超时
  }
+
+  /**
+ * @brief key thread function.
+ * @param void *argument  
+ * @return void
+ *
+ */
+void key_task_Func(void *argument)
+{
+	key_status_t key_ret = KEY_OK;
+	key_press_status_t key_status = KEY_NOT_PRESSED;
+	key_queue = xQueueCreate( 10, sizeof( key_press_status_t ));
+	uint32_t send_value = 0;
+	
+	if(key_queue == NULL)
+	{
+		printf("key_queue created failed\r\n");
+	}
+	else
+	{
+		printf("key_queue created successfully\r\n");
+	}
+		
+	for(;;)
+	{
+		//printf("Hello key thread\r\n");
+		send_value++;
+		key_ret = key_scan(&key_status);
+		
+		if(KEY_OK == key_ret)
+		{
+			if(KEY_PRESSED == key_status)
+			{
+				printf("Key_Pressed\r\n");
+				if(pdTRUE == xQueueSend(key_queue,&send_value,0))
+				{
+					printf("send successfully\r\n");
+				}
+			}
+		}
+		if(KEY_OK != key_ret)
+		{
+//			printf("Key_not_Pressed\r\n");
+		}
+		
+		osDelay(10);
+	}
+}
 

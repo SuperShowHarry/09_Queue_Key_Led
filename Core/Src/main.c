@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "bsp_key.h"
+#include "bsp_led.h"
 #include <queue.h>
 /* USER CODE END Includes */
 
@@ -53,17 +54,8 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-//************* thread *************//
-osThreadId_t key_TaskHandle;
-const osThreadAttr_t key_Task_attributes = {
-  .name = "key_Task",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
-};
-//************* thread *************//
-//************* queue *************//
-QueueHandle_t key_queue;
-//************* queue *************//
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,13 +85,7 @@ void StartDefaultTask(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
- /**
- * @brief key thread function.
- * @param void *argument  
- * @return void
- *
- */
-void key_task_Func(void *argument);
+
 /* USER CODE END 0 */
 
 /**
@@ -162,6 +148,7 @@ int main(void)
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 	key_TaskHandle = osThreadNew(key_task_Func, NULL, &key_Task_attributes);
+	led_TaskHandle = osThreadNew(led_task_Func, NULL, &led_Task_attributes);
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
@@ -297,47 +284,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void key_task_Func(void *argument)
-{
-	key_status_t key_ret = KEY_OK;
-	key_press_status_t key_status = KEY_NOT_PRESSED;
-	key_queue = xQueueCreate( 10, sizeof( key_press_status_t ));
-	uint32_t send_value = 0;
-	
-	if(key_queue == NULL)
-	{
-		printf("key_queue created failed\r\n");
-	}
-	else
-	{
-		printf("key_queue created successfully\r\n");
-	}
-		
-	for(;;)
-	{
-		//printf("Hello key thread\r\n");
-		send_value++;
-		key_ret = key_scan(&key_status);
-		
-		if(KEY_OK == key_ret)
-		{
-			if(KEY_PRESSED == key_status)
-			{
-//				printf("Key_Pressed\r\n");
-				if(pdTRUE == xQueueSend(key_queue,&send_value,0))
-				{
-					printf("send successfully\r\n");
-				}
-			}
-		}
-		if(KEY_OK != key_ret)
-		{
-//			printf("Key_not_Pressed\r\n");
-		}
-		
-		osDelay(10);
-	}
-}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -351,6 +298,7 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
 	uint32_t received_value = 0;
+	led_operation_t led_ops_value = LED_ON;
   /* Infinite loop */
   for(;;)
   {
@@ -363,7 +311,13 @@ void StartDefaultTask(void *argument)
 			{
 				// pcRxedMessage now points to the struct AMessage variable posted
 				// by vATask.
-				printf("received queue value = [%d]", received_value);
+				printf("received key_queue value = [%d]\r\n", received_value);
+				//send the operation to LED
+				led_ops_value = LED_TOGGLE;
+				if(pdTRUE == xQueueSend(led_queue,&led_ops_value,0))
+				{
+					printf("send led_value successfully\r\n");
+				}
 			}
 		}
     
