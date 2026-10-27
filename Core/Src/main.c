@@ -147,7 +147,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
-	key_TaskHandle = osThreadNew(key_task_Func, NULL, &key_Task_attributes);
+	//key_TaskHandle = osThreadNew(key_task_Func, NULL, &key_Task_attributes);
 	led_TaskHandle = osThreadNew(led_task_Func, NULL, &led_Task_attributes);
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
@@ -297,30 +297,47 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-	uint32_t received_value = 0;
-	led_operation_t led_ops_value = LED_ON;
+	/************************************APP_TASK*************************************/
+	/**                        Variables (in stack)                                 **/
+	key_status_t ret_key_status  =  KEY_OK;
+	key_press_status_t key_value =  KEY_NOT_PRESSED;
+	led_operation_t led_ops_event = LED_INITED_VALUE;
   /* Infinite loop */
   for(;;)
   {
-		printf("StartDefaultTask\r\n");
-    if( key_queue != 0 )
+		printf("APP task is living\r\n");
+		//1.判断长按和短按 
+		ret_key_status = key_scan_short_long_press(&key_value, 1000);
+		
+		if(KEY_OK == ret_key_status)
 		{
-			// Receive a message on the created queue.  Block for 10 ticks if a
-			// message is not immediately available.
-			if( xQueueReceive( key_queue, &( received_value ), ( TickType_t ) 10 ) )
+			//1.1判断为短按
+			if(KEY_SHORT_PRESSED == key_value)
 			{
-				// pcRxedMessage now points to the struct AMessage variable posted
-				// by vATask.
-				printf("received key_queue value = [%d]\r\n", received_value);
-				//send the operation to LED
-				led_ops_value = LED_TOGGLE;
-				if(pdTRUE == xQueueSend(led_queue,&led_ops_value,0))
+				printf("short pressed at [%d] tick \r\n", HAL_GetTick());
+				//3.若为短按，则发送对应的LED翻转的消息队列
+				led_ops_event = LED_TOGGLE;
+				if(pdTRUE == xQueueSend(led_queue,&led_ops_event,0))
 				{
-					printf("send led_value successfully\r\n");
+					printf("LED_TOGGLE send successfully at [%d] tick \r\n", HAL_GetTick());
+				}
+			}
+			
+			//1.2判断为长按
+			if(KEY_LONG_PRESSED == key_value)
+			{
+				printf("long pressed at [%d] tick \r\n", HAL_GetTick());
+				led_ops_event = LED_BLINK_3_TIMES;
+				if(pdTRUE == xQueueSend(led_queue,&led_ops_event,0))
+				{
+					printf("LED_BLINK_3_TIMES send successfully at [%d] tick \r\n", HAL_GetTick());
 				}
 			}
 		}
-    
+		//2.若为长按，则发送对应的闪烁3次消息队列
+		
+		//3.若为短按，则发送对应的LED翻转的消息队列
+	
     osDelay(1);
   }
   /* USER CODE END 5 */

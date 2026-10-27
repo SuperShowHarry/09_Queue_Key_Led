@@ -67,6 +67,8 @@ typedef enum
     LED_ON              = 0,          /* Operation completed successfully.  */
     LED_OFF             = 1,          /* Operation completed successfully.  */
 		LED_TOGGLE          = 2,          /* Operation completed successfully.  */
+		LED_BLINK_3_TIMES		= 3,
+		LED_INITED_VALUE		= 0XFF,
 } led_operation_t;
 //******************************* Declaring *******************************//
 //******************************* Declaring *******************************//
