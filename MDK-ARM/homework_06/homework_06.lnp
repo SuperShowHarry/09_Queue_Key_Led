@@ -5,6 +5,8 @@
 "homework_06\stm32f4xx_it.o"
 "homework_06\stm32f4xx_hal_msp.o"
 "homework_06\stm32f4xx_hal_timebase_tim.o"
+"homework_06\stm32f4xx_hal_tim.o"
+"homework_06\stm32f4xx_hal_tim_ex.o"
 "homework_06\stm32f4xx_hal_rcc.o"
 "homework_06\stm32f4xx_hal_rcc_ex.o"
 "homework_06\stm32f4xx_hal_flash.o"
@@ -18,8 +20,6 @@
 "homework_06\stm32f4xx_hal_cortex.o"
 "homework_06\stm32f4xx_hal.o"
 "homework_06\stm32f4xx_hal_exti.o"
-"homework_06\stm32f4xx_hal_tim.o"
-"homework_06\stm32f4xx_hal_tim_ex.o"
 "homework_06\stm32f4xx_hal_uart.o"
 "homework_06\system_stm32f4xx.o"
 "homework_06\croutine.o"
@@ -32,8 +32,8 @@
 "homework_06\cmsis_os2.o"
 "homework_06\heap_4.o"
 "homework_06\port.o"
-"homework_06\bsp_key.o"
 "homework_06\bsp_led.o"
+"homework_06\bsp_key_irq.o"
 --library_type=microlib --strict --scatter "homework_06\homework_06.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

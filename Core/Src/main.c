@@ -23,8 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include "bsp_key.h"
 #include "bsp_led.h"
+#include "bsp_key_irq.h"
 #include <queue.h>
 /* USER CODE END Includes */
 
@@ -144,11 +144,13 @@ int main(void)
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
 	key_TaskHandle = osThreadNew(key_task_Func, NULL, &key_Task_attributes);
-	led_TaskHandle = osThreadNew(led_task_Func, NULL, &led_Task_attributes);
+  led_TaskHandle = osThreadNew(led_task_Func, NULL, &led_Task_attributes);
+  /* USER CODE END RTOS_THREADS */
+
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
@@ -255,8 +257,8 @@ static void MX_USART1_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -273,14 +275,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : Key_Pin */
-  GPIO_InitStruct.Pin = Key_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : KEY_Pin */
+  GPIO_InitStruct.Pin = KEY_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(Key_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -297,36 +303,112 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-	uint32_t received_value = 0;
-	led_operation_t led_ops_value = LED_ON;
+	/************************************APP_TASK*************************************/
+	/**                        Variables (in stack)                                 **/
+	//led_operation_t led_ops_event = LED_INITED_VALUE;
   /* Infinite loop */
-  for(;;)
+	
+	osDelay(500);
+	
+	
+#if 0	//Test #1 error fetch
+	key_press_event_t key_press_event =
+	{
+		.edge_type = RASING,
+		.trigger_tick = HAL_GetTick()
+	};
+	
+	if(inter_key_queue == NULL)
+	{
+		printf("inter_key_queue created faild!\r\n");
+	}
+	if(pdTRUE == xQueueSendToFront( inter_key_queue, &key_press_event, 0))
+	{
+		printf("key_result send short press successfully at [%d] tick \r\n", HAL_GetTick());
+	}
+#endif
+
+#if 0	//Test #2 filting fetch
+	key_press_event_t key_press_event =
+	{
+		.edge_type = FAILING,
+		.trigger_tick = HAL_GetTick()
+	};
+	
+	if(inter_key_queue == NULL)
+	{
+		printf("inter_key_queue created faild!\r\n");
+	}
+	if(pdTRUE == xQueueSend( inter_key_queue, &key_press_event, 0))
+	{
+		printf("key_result send short press successfully at [%d] tick \r\n", HAL_GetTick());
+	}
+	
+	HAL_Delay(5);
+	
+	key_press_event_t key_press_event2 =
+	{
+		.edge_type = RASING,
+		.trigger_tick = HAL_GetTick()
+	};
+	
+	if(inter_key_queue == NULL)
+	{
+		printf("inter_key_queue created faild!\r\n");
+	}
+	if(pdTRUE == xQueueSend( inter_key_queue, &key_press_event2, 0))
+	{
+		printf("key_result send short press successfully at [%d] tick \r\n", HAL_GetTick());
+	}
+	
+#endif
+	
+#if 0	//Test #3 long press
+	key_press_event_t key_press_event =
+	{
+		.edge_type = FAILING,
+		.trigger_tick = HAL_GetTick()
+	};
+	
+	if(inter_key_queue == NULL)
+	{
+		printf("inter_key_queue created faild!\r\n");
+	}
+	if(pdTRUE == xQueueSend( inter_key_queue, &key_press_event, 0))
+	{
+		printf("key_result send long press successfully at [%d] tick \r\n", HAL_GetTick());
+	}
+	
+	HAL_Delay(500);
+	
+	key_press_event_t key_press_event2 =
+	{
+		.edge_type = RASING,
+		.trigger_tick = HAL_GetTick()
+	};
+	
+	if(inter_key_queue == NULL)
+	{
+		printf("inter_key_queue created faild!\r\n");
+	}
+	if(pdTRUE == xQueueSend( inter_key_queue, &key_press_event2, 0))
+	{
+		printf("key_result send long press successfully at [%d] tick \r\n", HAL_GetTick());
+	}
+	
+#endif
+	
+  
+	for(;;)
   {
-		printf("StartDefaultTask\r\n");
-    if( key_queue != 0 )
-		{
-			// Receive a message on the created queue.  Block for 10 ticks if a
-			// message is not immediately available.
-			if( xQueueReceive( key_queue, &( received_value ), ( TickType_t ) 10 ) )
-			{
-				// pcRxedMessage now points to the struct AMessage variable posted
-				// by vATask.
-				printf("received key_queue value = [%d]\r\n", received_value);
-				//send the operation to LED
-				led_ops_value = LED_TOGGLE;
-				if(pdTRUE == xQueueSend(led_queue,&led_ops_value,0))
-				{
-					printf("send led_value successfully\r\n");
-				}
-			}
-		}
-    
-    osDelay(1);
+		printf("APP task is living\r\n");
+		
+		
+
+    osDelay(100);
   }
   /* USER CODE END 5 */
 }
-
-
 
 /**
   * @brief  Period elapsed callback in non blocking mode
@@ -341,7 +423,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 0 */
 
   /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM1) {
+  if (htim->Instance == TIM1)
+  {
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
@@ -363,8 +446,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

@@ -1,5 +1,5 @@
 homework_06\bsp_led.o: ..\BSP\led\src\bsp_led.c
-homework_06\bsp_led.o: ..\BSP\led\inc\bsp_led.h
+homework_06\bsp_led.o: ../BSP/led/inc/bsp_led.h
 homework_06\bsp_led.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 homework_06\bsp_led.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 homework_06\bsp_led.o: ../Core/Inc/main.h

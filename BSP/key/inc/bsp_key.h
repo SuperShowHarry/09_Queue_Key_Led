@@ -65,11 +65,14 @@ typedef enum
 {
     KEY_PRESSED         = 0,          /* Operation completed successfully.  */
     KEY_NOT_PRESSED     = 1,          /* Run-time error without case matched*/
+	  KEY_SHORT_PRESSED   = 2,
+		KEY_LONG_PRESSED 		= 3,
 } key_press_status_t;
 //******************************* Defines ********************************//
 //******************************* Declaring *******************************//
  key_status_t key_scan(key_press_status_t * key_value);
 
+ key_status_t key_scan_short_long_press(key_press_status_t * key_value, uint32_t short_press_time);
 
 void key_task_Func(void *argument);
 //******************************* Declaring *******************************//
