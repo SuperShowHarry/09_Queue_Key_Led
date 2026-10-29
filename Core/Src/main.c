@@ -44,6 +44,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim2;
+
 UART_HandleTypeDef huart1;
 
 /* Definitions for defaultTask */
@@ -62,6 +64,7 @@ const osThreadAttr_t defaultTask_attributes = {
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_TIM2_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -118,8 +121,9 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
+	HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -217,6 +221,51 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 10000-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 1000-1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -266,7 +315,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
@@ -398,13 +447,60 @@ void StartDefaultTask(void *argument)
 	
 #endif
 	
+	#if 0	//Test #4 Blink_1_times
+	led_operation_t led_value = LED_BLINK_3_TIMES;
+	
+	if(led_queue == NULL)
+	{
+		printf("led_queue created faild!\r\n");
+	}
+			
+	if(pdTRUE == xQueueSend( led_queue, &led_value, ( TickType_t ) 0))
+	{
+		printf("led_queue send led_value successfully at [%d] tick \r\n", HAL_GetTick());
+	}
+	
+#endif
   
+	key_press_status_t key_result = KEY_SHORT_PRESSED;
+	
 	for(;;)
   {
 		printf("APP task is living\r\n");
 		
-		
-
+		if(pdTRUE == xQueueReceive(key_queue, &key_result, 0))
+		{
+			printf("key_result receive successfully at [%d] tick \r\n", HAL_GetTick());
+			
+			//Send the message to the led
+			if(KEY_SHORT_PRESSED == key_result)
+			{
+				led_operation_t led_value = LED_BLINK_1_TIMES;
+			
+				if(NULL == led_queue)
+				{
+					printf("led_queue not created at [%d] tick\r\n", HAL_GetTick());
+				}
+				if(pdTRUE == xQueueSend(led_queue, &(led_value), (TickType_t)0))
+				{
+					printf("led_queue send led_value successfully at [%d] tick\r\n", HAL_GetTick());
+				}
+			}
+			
+			if(KEY_LONG_PRESSED == key_result)
+			{
+				led_operation_t led_value = LED_BLINK_10_TIMES;
+			
+				if(NULL == led_queue)
+				{
+					printf("led_queue not created at [%d] tick\r\n", HAL_GetTick());
+				}
+				if(pdTRUE == xQueueSend(led_queue, &(led_value), (TickType_t)0))
+				{
+					printf("led_queue send led_value successfully at [%d] tick\r\n", HAL_GetTick());
+				}
+			}
+		}
     osDelay(100);
   }
   /* USER CODE END 5 */
@@ -428,7 +524,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-
+	if (htim->Instance == TIM2)
+  {
+    led_callback_in_timer();
+  }
   /* USER CODE END Callback 1 */
 }
 

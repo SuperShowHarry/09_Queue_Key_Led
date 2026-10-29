@@ -28,6 +28,11 @@
   osThreadId_t led_TaskHandle;
   QueueHandle_t led_queue;
  
+  //******************************* Global_Var ********************************//
+ static uint32_t g_blink_times = 0;	//1:blink 1, 5:blink 5
+ static uint32_t g_blink_order = 0;
+ //******************************* Global_Var ********************************//
+ 
  const osThreadAttr_t led_Task_attributes = {
   .name = "led_Task",
   .stack_size = 128 * 4,
@@ -86,6 +91,66 @@ led_status_t led_on_off(led_operation_t led_operation)
 	return ret;
 }
 
+/**
+ * @brief Instantiates the bsp_led_handler_t target.
+ *
+ * Steps:
+ *  1. Adds Core interfaces into bsp_led_driver instance target.
+ *  2. Adds OS interfaces into bsp_led_driver instance target.
+ *  3. Adds timebase interfaces into bsp_led_driver instance target.
+ *
+ * @param[in] self        : Pointer to the target of handler.
+ * @param[in] os_delay    : Pointer to the os_delay_interface.
+ * @param[in] os_queue    : Pointer to the os_queue_interface.
+ * @param[in] os_critical : Pointer to the os_critical_interface.
+ * @param[in] os_thread   : Pointer to the os_thread_interface.
+ * @param[in] time_base   : Pointer to the time_base_interface.
+ *
+ * @return led_handler_status_t : Status of the function.
+ *
+ */
+led_status_t led_on_off_timer_irq(led_operation_t led_operation)
+{
+	led_status_t ret = LED_OK;
+	
+//	if(LED_ON == led_operation)
+//	{
+//		//1.Make the LED ON
+//		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+//	}
+//	
+//	if(LED_OFF == led_operation)
+//	{
+//		//2.Make the LED OFF
+//		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+//	}
+	
+//	if(LED_TOGGLE == led_operation)
+//	{
+//		//2.Make the LED TOGGLE
+//		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+//	}
+	
+	if(LED_BLINK_1_TIMES == led_operation)
+	{
+		g_blink_times = 1;	//1:blink 1, 5:blink 5
+		g_blink_order = 0;
+	}
+	else if(LED_BLINK_3_TIMES == led_operation)
+	{
+		g_blink_times = 3;	//1:blink 1, 5:blink 5
+		g_blink_order = 0;
+	}
+	else if(LED_BLINK_10_TIMES == led_operation)
+	{
+		g_blink_times = 10;	//1:blink 1, 5:blink 5
+		g_blink_order = 0;
+		
+		
+	}
+	return ret;
+}
+
   /**
  * @brief key thread function.
  * @param void *argument  
@@ -120,7 +185,7 @@ void led_task_Func(void *argument)
 				// pcRxedMessage now points to the struct AMessage variable posted
 				// by vATask.
 				printf("received led_queue value = [%d] at time [%d]\r\n", led_value, HAL_GetTick());
-				led_ret = led_on_off(led_value);
+				led_ret = led_on_off_timer_irq(led_value);
 				if(LED_OK == led_ret)
 				{
 					printf("led_on_off successfully at time [%d]\r\n", HAL_GetTick());
@@ -131,3 +196,41 @@ void led_task_Func(void *argument)
 		osDelay(100);
 	}
 }
+
+/**
+ * @brief led callback in timer2 for timer to run.
+ *
+ * Steps:
+ *  1. doing the specific operation
+ *
+ * @param[in] void
+ *
+ * @return led handler status t : status of the function
+ *
+ */
+led_status_t led_callback_in_timer(void)
+{
+	//1. if the g_blink_times is not zero, then start blink
+	if(g_blink_times > 0)
+	{
+		if(g_blink_order %2 == 0)
+		{
+			led_on_off(LED_ON);
+		}
+		else
+		{
+			led_on_off(LED_OFF);
+			g_blink_times--;
+		}
+		g_blink_order++;
+		
+		if(!g_blink_times)
+		{
+			g_blink_times = 0;
+			g_blink_order = 0;
+		}
+	}
+	return LED_OK;
+}
+	
+

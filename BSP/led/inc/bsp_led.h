@@ -39,6 +39,7 @@
 /****************************** Includes ******************************/
  
  //******************************* Defines ********************************//
+
  //************* thread *************//
 extern osThreadId_t led_TaskHandle;
 extern const osThreadAttr_t led_Task_attributes;
@@ -67,13 +68,17 @@ typedef enum
     LED_ON              = 0,          /* Operation completed successfully.  */
     LED_OFF             = 1,          /* Operation completed successfully.  */
 		LED_TOGGLE          = 2,          /* Operation completed successfully.  */
-		LED_BLINK_3_TIMES		= 3,
+		LED_BLINK_1_TIMES		= 3,
+		LED_BLINK_3_TIMES		= 4,
+		LED_BLINK_10_TIMES	= 5,
 		LED_INITED_VALUE		= 0XFF,
 } led_operation_t;
 //******************************* Declaring *******************************//
 //******************************* Declaring *******************************//
 led_status_t led_on_off(led_operation_t led_operation);
 void led_task_Func(void *argument);
+
+extern led_status_t led_callback_in_timer(void);
 //******************************* Declaring *******************************//
  #endif
 
