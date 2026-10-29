@@ -35,6 +35,8 @@
  QueueHandle_t key_queue				= NULL;		
  QueueHandle_t inter_key_queue	= NULL;
  
+ static uint32_t irq_type = FALING_TYPE;
+ 
 const osThreadAttr_t key_Task_attributes = {
   .name = "key_Task",
   .stack_size = 128 * 4,
@@ -175,10 +177,17 @@ void key_task_Func(void *argument)
 			printf("key_press_event.trigger_tick = [%d] tick \r\n", key_press_event.trigger_tick);
 			printf("inter_key_queue reeceive key event at [%d] tick \r\n", HAL_GetTick());
 			
+			if(first_trigger_tick == key_press_event.trigger_tick)
+			{
+				printf("equal tick error \r\n");
+				continue;
+			}
+			
 			//1.1 if there is the new data about the key,
 			//then update it in state machine
 			if((key_press_event.edge_type == RASING) && (event_index == 0))
 			{
+				first_trigger_tick = key_press_event.trigger_tick;
 				printf("key RASING fetched! error!\r\n");
 			}
 			
@@ -201,6 +210,8 @@ void key_task_Func(void *argument)
 				{
 					//1.1.1.1 the new key press event is not valid
 					printf("Invalid key fetched at [%d] tick \r\n", HAL_GetTick());
+					first_trigger_tick  = key_press_event.trigger_tick;
+          event_index = 0;
 					continue;
 				}
 				
@@ -217,12 +228,21 @@ void key_task_Func(void *argument)
 					if(pdTRUE == xQueueSendToFront( key_queue, &key_result, 0))
 					{
 						printf("key_result send short press successfully at [%d] tick \r\n", HAL_GetTick());
+						first_trigger_tick = key_press_event.trigger_tick;
 						event_index = 0;
+						extern uint32_t irq_type;
+						irq_type = FALING_TYPE;
+						GPIO_InitTypeDef GPIO_InitStruct = {0};
+						GPIO_InitStruct.Pin = KEY_Pin;
+						GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+						GPIO_InitStruct.Pull = GPIO_PULLUP;
+						HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
 					}
 					else
 					{
 						printf("key_result send short press failed at [%d] tick \r\n", HAL_GetTick());
 					}
+					continue;
 				}
 				
 				//1.1.2.1.2 if the interval is more than the short_press time
@@ -235,12 +255,21 @@ void key_task_Func(void *argument)
 					if(pdTRUE == xQueueSendToFront( key_queue, &key_result, 0))
 					{
 						printf("key_result send long press successfully at [%d] tick \r\n", HAL_GetTick());
+						first_trigger_tick = key_press_event.trigger_tick;
 						event_index = 0;
+						extern uint32_t irq_type;
+						irq_type = FALING_TYPE;
+						GPIO_InitTypeDef GPIO_InitStruct = {0};
+						GPIO_InitStruct.Pin = KEY_Pin;
+						GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+						GPIO_InitStruct.Pull = GPIO_PULLUP;
+						HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
 					}
 					else
 					{
 						printf("key_result send long press failed at [%d] tick \r\n", HAL_GetTick());
 					}
+					continue;
 				}
 			}
 		}
@@ -270,7 +299,7 @@ KEY_CALLBACK
   	send the event to the inter_key_queue	\
   	changing the interruption type to Raising\
 	*/
-	static uint32_t irq_type = FALING_TYPE;
+	
 	
 	BaseType_t xHigherPrioritTaskWoken;
 	if(FALING_TYPE == irq_type)
