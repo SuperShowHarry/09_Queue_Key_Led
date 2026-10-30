@@ -299,7 +299,7 @@ KEY_CALLBACK
   	send the event to the inter_key_queue	\
   	changing the interruption type to Raising\
 	*/
-	
+	HAL_GPIO_WritePin(IRQ_TRACE_GPIO_Port, IRQ_TRACE_Pin, GPIO_PIN_SET);
 	
 	BaseType_t xHigherPrioritTaskWoken;
 	if(FALING_TYPE == irq_type)
@@ -356,5 +356,6 @@ KEY_CALLBACK
 		GPIO_InitStruct.Pull = GPIO_PULLUP;
 		HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
 	}
+	HAL_GPIO_WritePin(IRQ_TRACE_GPIO_Port, IRQ_TRACE_Pin, GPIO_PIN_RESET);
 }
 
