@@ -158,12 +158,22 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>g_blink_times,0x0A</ItemText>
+          <ItemText>p_key_press_event-&gt;edge_type,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>1</count>
           <WinNumber>1</WinNumber>
-          <ItemText>g_blink_order,0x0A</ItemText>
+          <ItemText>p_key_press_event-&gt;trigger_tick,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>2</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>key_press_event,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>first_trigger_tick,0x0A</ItemText>
         </Ww>
       </WatchWindow1>
       <Tracepoint>

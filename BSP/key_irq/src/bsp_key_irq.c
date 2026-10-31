@@ -150,11 +150,13 @@ void key_task_Func(void *argument)
 		.edge_type = RASING, 
 		.trigger_tick = 0
 	};
+	
+	key_press_event_t 				*p_key_press_event = NULL;
 	/**						Variables (in task stack)			**/
 	
 	/**						Variables (in OS heap)			**/
 	key_queue 			= xQueueCreate( 10, sizeof( key_press_status_t ));
-	inter_key_queue = xQueueCreate( 10, sizeof( key_press_event_t ));
+	inter_key_queue = xQueueCreate( 10, 4);
 	/**						Variables (in OS heap)			**/
 	
 	//check if the queue has been created successfully
@@ -172,8 +174,10 @@ void key_task_Func(void *argument)
 	{
 		printf("key_task_func running at [%d] tick \r\n", HAL_GetTick());
 		//1. check if there is new data about the key press in the queue
-		if(pdTRUE == xQueueReceive( inter_key_queue, &( key_press_event ), ( TickType_t ) 0) )
+		if(pdTRUE == xQueueReceive( inter_key_queue, &( p_key_press_event ), ( TickType_t ) 0) )
 		{
+			key_press_event.edge_type = p_key_press_event->edge_type;
+			key_press_event.trigger_tick = p_key_press_event->trigger_tick;
 			printf("key_press_event.trigger_tick = [%d] tick \r\n", key_press_event.trigger_tick);
 			printf("inter_key_queue reeceive key event at [%d] tick \r\n", HAL_GetTick());
 			
@@ -301,20 +305,34 @@ KEY_CALLBACK
 	*/
 	HAL_GPIO_WritePin(IRQ_TRACE_GPIO_Port, IRQ_TRACE_Pin, GPIO_PIN_SET);
 	
+	static key_press_event_t key_press_event =		//.data¶Î
+	{
+		.edge_type = FAILING,
+		.trigger_tick = 0,
+	};
+	
+	static key_press_event_t key_press_event2 =		//.data¶Î
+	{
+		.edge_type = RASING,
+		.trigger_tick = 0,
+	};
+	
+	key_press_event_t *p_key_press_event = &key_press_event;
+	key_press_event_t *p_key_press_event2 = &key_press_event2;
+	
 	BaseType_t xHigherPrioritTaskWoken;
 	if(FALING_TYPE == irq_type)
 	{
-		key_press_event_t key_press_event =
-		{
-			.edge_type = FAILING,
-			.trigger_tick = HAL_GetTick()
-		};
+		
 		
 		if(inter_key_queue == NULL)
 		{
 			printf("inter_key_queue created faild!\r\n");
 		}
-		if(pdTRUE == xQueueSendFromISR( inter_key_queue, &key_press_event, &xHigherPrioritTaskWoken))
+		
+		key_press_event.trigger_tick = HAL_GetTick();
+		
+		if(pdTRUE == xQueueSendFromISR( inter_key_queue, &p_key_press_event, &xHigherPrioritTaskWoken))
 		{
 			printf("key_result send Falling_event successfully at [%d] tick \r\n", HAL_GetTick());
 		}
@@ -333,18 +351,17 @@ KEY_CALLBACK
 	*/
 	else if(RISING_TYPE == irq_type)
 	{
-		key_press_event_t key_press_event2 =
-		{
-			.edge_type = RASING,
-			.trigger_tick = HAL_GetTick()
-		};
+
 		
 		if(inter_key_queue == NULL)
 		{
 			printf("inter_key_queue created faild!\r\n");
 		}
-		if(pdTRUE == xQueueSendFromISR( inter_key_queue, &key_press_event2, &xHigherPrioritTaskWoken))
-		{
+		
+		key_press_event2.trigger_tick = HAL_GetTick();
+		
+		if(pdTRUE == xQueueSendFromISR( inter_key_queue, &p_key_press_event2, &xHigherPrioritTaskWoken))
+		{	
 			printf("key_result send Rising_event successfully at [%d] tick \r\n", HAL_GetTick());
 		}
 		//1.1 changing the irq type
